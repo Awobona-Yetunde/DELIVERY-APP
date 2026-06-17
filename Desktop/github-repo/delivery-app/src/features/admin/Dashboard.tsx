@@ -415,11 +415,11 @@ export default function AdminDashboard() {
                       color: "#F2EDE4",
                       fontSize: "12px",
                     }}
-                    formatter={(val: any, name: string) => [
-                      name === "order_count"
+                    formatter={(val, name) => [
+                      String(name) === "order_count"
                         ? val
                         : `₦${Number(val).toLocaleString()}`,
-                      name === "order_count" ? "Orders" : "Avg price",
+                      String(name) === "order_count" ? "Orders" : "Avg price",
                     ]}
                   />
                   <Bar

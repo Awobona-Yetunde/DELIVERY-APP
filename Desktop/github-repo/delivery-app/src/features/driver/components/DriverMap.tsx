@@ -54,7 +54,7 @@ export default function DriverMap({
   const routeLineRef = useRef<L.Polyline | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [unread, setUnread] = useState(0);
-  const [mapReady, setMapReady] = useState(false);
+  const [mapReady ] = useState(false);
 
   // Init map
   useEffect(() => {

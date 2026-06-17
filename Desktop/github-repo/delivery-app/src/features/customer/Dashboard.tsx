@@ -151,7 +151,6 @@ export default function CustomerDashboard() {
             <ActiveDelivery
               stage={stage}
               order={activeOrder}
-              onStageChange={setStage}
               onCancel={handleCancel}
             />
           )}
@@ -160,10 +159,7 @@ export default function CustomerDashboard() {
         {/* Right panel — map fills remaining space */}
         <div className="flex-1 flex flex-col min-h-[400px] lg:min-h-0">
           <div className="flex-1 relative">
-            <LiveMap
-              stage={stage}
-              order={activeOrder}
-            />
+            <LiveMap stage={stage} order={activeOrder} />
           </div>
 
           {/* Recent orders strip below map when idle */}

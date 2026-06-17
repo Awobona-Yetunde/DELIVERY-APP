@@ -34,20 +34,7 @@ const INITIAL_FORM: FormData = {
   stateOfOperation: "",
 };
 
-const NIGERIAN_STATES = [
-  "Ondo State",
-  "Lagos State",
-  "Abuja (FCT)",
-  "Ogun State",
-  "Osun State",
-  "Oyo State",
-  "Ekiti State",
-  "Edo State",
-  "Delta State",
-  "Rivers State",
-  "Kano State",
-  "Kaduna State",
-];
+
 
 export default function Register() {
   const navigate = useNavigate();

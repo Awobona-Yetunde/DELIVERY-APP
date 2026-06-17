@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../../../store/authStore";
+import { WS_URL } from "../../../lib/config";
 
 interface Message {
   type: string;
@@ -39,7 +40,7 @@ export default function DriverChat({
       setConnectionError("");
 
       const ws = new WebSocket(
-        `ws://147.182.208.195:8000/tracking/chat/${orderId}?token=${token}`,
+        `${WS_URL}/tracking/chat/${orderId}?token=${token}`,
       );
       wsRef.current = ws;
 

@@ -11,6 +11,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { DeliveryStage } from "../Dashboard";
 import ChatWidget from "./ChatWidget";
+import { WS_URL } from "../../../lib/config";
+
 
 // Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -100,7 +102,7 @@ export default function LiveMap({
       if (!isMounted) return;
 
       const ws = new WebSocket(
-        `ws://147.182.208.195:8000/tracking/ws/${order.id}`,
+        `${WS_URL}/tracking/ws/${order.id}`,
       );
       wsRef.current = ws;
 

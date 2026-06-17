@@ -127,12 +127,15 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
-
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center text-lg">📦</div>
-          <span className="text-light text-xl font-semibold tracking-tight">SendRun</span>
+          <div className="w-9 h-9 bg-accent rounded-xl flex items-center justify-center text-lg">
+            📦
+          </div>
+          <span className="text-light text-xl font-semibold tracking-tight">
+            SendRun
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -143,14 +146,14 @@ export default function LandingPage() {
             🧮 Get a quote
           </button>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate("/login")}
             className="px-4 py-2 rounded-xl border border-white/10 text-light text-sm
               font-medium hover:bg-white/5 transition-colors cursor-pointer"
           >
             Sign in
           </button>
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate("/register")}
             className="px-4 py-2 rounded-xl bg-accent text-surface text-sm
               font-semibold hover:bg-amber-400 transition-colors cursor-pointer"
           >
@@ -165,25 +168,31 @@ export default function LandingPage() {
         <div className="absolute w-125 h-125 rounded-full border-80 border-accent/5 -top-40 -right-40 pointer-events-none" />
         <div className="absolute w-75 h-75 rounded-full border-60 border-primary/40 -bottom-20 -left-20 pointer-events-none" />
 
-        <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20
-          rounded-full px-4 py-1.5 mb-6">
+        <div
+          className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20
+          rounded-full px-4 py-1.5 mb-6"
+        >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-          <span className="text-accent text-xs font-semibold">Now live in Ondo State</span>
+          <span className="text-accent text-xs font-semibold">
+            Now live in Ondo State
+          </span>
         </div>
 
         <h1 className="text-light text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6 max-w-3xl">
-          Send packages across<br />
+          Send packages across
+          <br />
           <span className="text-accent">Nigeria</span>, stress-free.
         </h1>
 
         <p className="text-muted text-lg max-w-xl leading-relaxed mb-10">
-          Book a verified driver from any motor park in Ondo State to Lagos, Abuja, Port Harcourt and more.
-          Real-time tracking. ML-powered pricing. No stress.
+          Book a verified driver from any motor park in Ondo State to Lagos,
+          Abuja, Port Harcourt and more. Real-time tracking. ML-powered pricing.
+          No stress.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-16">
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate("/register")}
             className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl text-base
               hover:bg-amber-400 transition-colors cursor-pointer flex items-center justify-center gap-2"
           >
@@ -201,8 +210,11 @@ export default function LandingPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full max-w-2xl">
-          {STATS.map(s => (
-            <div key={s.label} className="bg-primary/30 border border-white/5 rounded-2xl px-4 py-4">
+          {STATS.map((s) => (
+            <div
+              key={s.label}
+              className="bg-primary/30 border border-white/5 rounded-2xl px-4 py-4"
+            >
               <p className="text-accent text-2xl font-bold">{s.value}</p>
               <p className="text-muted text-xs mt-1">{s.label}</p>
             </div>
@@ -224,13 +236,22 @@ export default function LandingPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {HOW.map((h, i) => (
-            <div key={h.step} className="relative bg-primary/20 border border-white/5 rounded-2xl p-5">
-              <div className="absolute top-4 right-4 text-white/5 text-5xl font-black">{h.step}</div>
+            <div
+              key={h.step}
+              className="relative bg-primary/20 border border-white/5 rounded-2xl p-5"
+            >
+              <div className="absolute top-4 right-4 text-white/5 text-5xl font-black">
+                {h.step}
+              </div>
               <div className="text-3xl mb-3">{h.icon}</div>
-              <h3 className="text-light text-sm font-semibold mb-2">{h.title}</h3>
+              <h3 className="text-light text-sm font-semibold mb-2">
+                {h.title}
+              </h3>
               <p className="text-muted text-xs leading-relaxed">{h.desc}</p>
               {i < HOW.length - 1 && (
-                <div className="hidden lg:block absolute top-1/2 -right-3 text-accent text-lg z-10">→</div>
+                <div className="hidden lg:block absolute top-1/2 -right-3 text-accent text-lg z-10">
+                  →
+                </div>
               )}
             </div>
           ))}
@@ -241,18 +262,39 @@ export default function LandingPage() {
       <section className="px-6 py-16 bg-primary/20 border-y border-white/5">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
-            <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-2">Why SendRun</p>
-            <h2 className="text-light text-3xl font-bold">Built for Nigerian roads</h2>
+            <p className="text-accent text-xs font-semibold uppercase tracking-widest mb-2">
+              Why SendRun
+            </p>
+            <h2 className="text-light text-3xl font-bold">
+              Built for Nigerian roads
+            </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
-              { icon: '🤖', title: 'ML-powered pricing', desc: 'Our model factors route risk, fuel price, distance, and demand to give you the fairest price — no surprises.' },
-              { icon: '📍', title: 'Live GPS tracking', desc: 'Watch your driver move in real time on the map. Know exactly where your package is at every moment.' },
-              { icon: '✅', title: 'Verified drivers only', desc: 'Every driver on SendRun is vetted with NIN and license checks before they carry a single package.' },
-            ].map(f => (
-              <div key={f.title} className="bg-surface border border-white/5 rounded-2xl p-5">
+              {
+                icon: "🤖",
+                title: "ML-powered pricing",
+                desc: "Our model factors route risk, fuel price, distance, and demand to give you the fairest price — no surprises.",
+              },
+              {
+                icon: "📍",
+                title: "Live GPS tracking",
+                desc: "Watch your driver move in real time on the map. Know exactly where your package is at every moment.",
+              },
+              {
+                icon: "✅",
+                title: "Verified drivers only",
+                desc: "Every driver on SendRun is vetted with NIN and license checks before they carry a single package.",
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="bg-surface border border-white/5 rounded-2xl p-5"
+              >
                 <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="text-light text-sm font-semibold mb-2">{f.title}</h3>
+                <h3 className="text-light text-sm font-semibold mb-2">
+                  {f.title}
+                </h3>
                 <p className="text-muted text-xs leading-relaxed">{f.desc}</p>
               </div>
             ))}
@@ -267,18 +309,19 @@ export default function LandingPage() {
             Ready to send your first package?
           </h2>
           <p className="text-muted text-sm mb-8 leading-relaxed">
-            Join hundreds of Nigerians already using SendRun to move packages across states safely and affordably.
+            Join hundreds of Nigerians already using SendRun to move packages
+            across states safely and affordably.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={() => navigate('/register')}
+              onClick={() => navigate("/register")}
               className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl
                 hover:bg-amber-400 transition-colors cursor-pointer"
             >
               Create a free account
             </button>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate("/login")}
               className="px-8 py-4 border border-white/10 text-light font-semibold
                 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer"
             >
@@ -291,18 +334,31 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-accent rounded-lg flex items-center justify-center text-sm">📦</div>
+          <div className="w-7 h-7 bg-accent rounded-lg flex items-center justify-center text-sm">
+            📦
+          </div>
           <span className="text-light text-sm font-semibold">SendRun</span>
         </div>
-        <p className="text-muted text-xs">© 2025 SendRun. Intercity logistics for Ondo State.</p>
+        <p className="text-muted text-xs">
+          © 2025 SendRun. Intercity logistics for Ondo State.
+        </p>
         <div className="flex items-center gap-4">
-          <button onClick={() => setShowQuote(true)} className="text-muted text-xs hover:text-accent transition-colors cursor-pointer">
+          <button
+            onClick={() => setShowQuote(true)}
+            className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
+          >
             Get a quote
           </button>
-          <button onClick={() => navigate('/register')} className="text-muted text-xs hover:text-accent transition-colors cursor-pointer">
+          <button
+            onClick={() => navigate("/register")}
+            className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
+          >
             Sign up
           </button>
-          <button onClick={() => navigate('/login')} className="text-muted text-xs hover:text-accent transition-colors cursor-pointer">
+          <button
+            onClick={() => navigate("/login")}
+            className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
+          >
             Sign in
           </button>
         </div>
@@ -318,20 +374,30 @@ export default function LandingPage() {
           loading={loading}
           error={error}
           onSet={set}
-          onOriginChange={(val) => {
-            setForm(prev => ({ ...prev, originPark: val, destination: '' }))
-            setResult(null)
+          onOriginChange={(val: string) => {
+            setForm((prev) => ({ ...prev, originPark: val, destination: "" }));
+            setResult(null);
           }}
-          onSelectSize={(val) => setForm(prev => ({ ...prev, packageSize: val }))}
-          onSelectWeight={(val) => setForm(prev => ({ ...prev, packageWeight: val }))}
-          onSelectVehicle={(val) => setForm(prev => ({ ...prev, vehicleType: val }))}
+          onSelectSize={(val: string) =>
+            setForm((prev) => ({ ...prev, packageSize: val }))
+          }
+          onSelectWeight={(val: string) =>
+            setForm((prev) => ({ ...prev, packageWeight: val }))
+          }
+          onSelectVehicle={(val: string) =>
+            setForm((prev) => ({ ...prev, vehicleType: val }))
+          }
           onQuote={handleQuote}
-          onClose={() => { setShowQuote(false); setResult(null); setError('') }}
-          onSignUp={() => navigate('/register')}
+          onClose={() => {
+            setShowQuote(false);
+            setResult(null);
+            setError("");
+          }}
+          onSignUp={() => navigate("/register")}
         />
       )}
     </div>
-  )
+  );
 }
 
 function QuoteModal({
