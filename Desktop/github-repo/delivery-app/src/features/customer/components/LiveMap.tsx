@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+  useMap,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { DeliveryStage } from "../Dashboard";
 import ChatWidget from "./ChatWidget";
 
+// Fix default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -13,12 +22,12 @@ L.Icon.Default.mergeOptions({
 });
 
 const DRIVER_ICON = L.divIcon({
-  html: `<div style="background:#F5A623;width:40px;height:40px;border-radius:50%;
+  html: `<div style="background:#F5A623;width:44px;height:44px;border-radius:50%;
     border:3px solid white;display:flex;align-items:center;justify-content:center;
-    font-size:20px;box-shadow:0 2px 10px rgba(0,0,0,0.4);">🚗</div>`,
+    font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,0.5);">🚗</div>`,
   className: "",
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
+  iconSize: [44, 44],
+  iconAnchor: [22, 22],
 });
 
 const ORIGIN_ICON = L.divIcon({
@@ -39,6 +48,26 @@ const DEST_ICON = L.divIcon({
   iconAnchor: [16, 16],
 });
 
+// Helper component to fit map bounds
+function FitBounds({ points }: { points: [number, number][] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length < 2) return;
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, { padding: [50, 50] });
+  }, [points, map]);
+  return null;
+}
+
+// Helper component to pan map to a point
+function PanTo({ position }: { position: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.panTo(position);
+  }, [position, map]);
+  return null;
+}
+
 export default function LiveMap({
   stage,
   order,
@@ -46,92 +75,22 @@ export default function LiveMap({
   stage: DeliveryStage;
   order: any;
 }) {
-  const mapDivRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const driverMarkerRef = useRef<L.Marker | null>(null);
-  const routeLineRef = useRef<L.Polyline | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
-
-  const [wsDriverLocation, setWsDriverLocation] = useState<{
+  const [driverLocation, setDriverLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [lastSeen, setLastSeen] = useState<string | null>(null);
-  const [mapReady, setMapReady] = useState(false);
-
-  // Init map once
-  useEffect(() => {
-    if (!mapDivRef.current || mapRef.current) return;
-
-    const map = L.map(mapDivRef.current, {
-      center: order ? [order.origin_lat, order.origin_lng] : [7.2571, 5.2058],
-      zoom: order ? 8 : 7,
-      zoomControl: true,
-    });
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-    }).addTo(map);
-
-    mapRef.current = map;
-
-    // Wait for map to be fully ready before allowing markers
-    map.whenReady(() => {
-      setMapReady(true);
-    });
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      setMapReady(false);
-    };
-  }, []);
-
-  // Invalidate size after map is ready — container might not have final dimensions yet
-  useEffect(() => {
-    if (!mapReady) return;
-    const timer = setTimeout(() => {
-      mapRef.current?.invalidateSize();
-    }, 200);
-    return () => clearTimeout(timer);
-  }, [mapReady]);
-
-  // Add origin + destination markers when order exists
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !order || !mapReady) return;
-
-    const origin: [number, number] = [order.origin_lat, order.origin_lng];
-    const dest: [number, number] = [
-      order.destination_lat,
-      order.destination_lng,
-    ];
-
-    L.marker(origin, { icon: ORIGIN_ICON })
-      .addTo(map)
-      .bindPopup(`<b>📦 Pickup</b><br>${order.origin_park}`);
-
-    L.marker(dest, { icon: DEST_ICON })
-      .addTo(map)
-      .bindPopup(`<b>🏁 Destination</b><br>${order.destination}`);
-
-    if (routeLineRef.current) routeLineRef.current.remove();
-    routeLineRef.current = L.polyline([origin, dest], {
-      color: "#F5A623",
-      weight: 3,
-      opacity: 0.7,
-      dashArray: "8, 8",
-    }).addTo(map);
-
-    map.fitBounds([origin, dest], { padding: [40, 40] });
-  }, [order?.id, mapReady]);
+  const [driverPos, setDriverPos] = useState<string | null>(null);
 
   // WebSocket for live driver location
   useEffect(() => {
     if (stage !== "in-transit" || !order?.id) {
-      wsRef.current?.close();
-      wsRef.current = null;
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       return;
     }
 
@@ -139,98 +98,143 @@ export default function LiveMap({
 
     const connect = () => {
       if (!isMounted) return;
-      console.log("Connecting tracking WS for order:", order.id);
 
       const ws = new WebSocket(
         `ws://147.182.208.195:8000/tracking/ws/${order.id}`,
       );
       wsRef.current = ws;
 
-      ws.onopen = () => {
-        console.log("Tracking WS connected ✅");
-      };
+      ws.onopen = () => console.log("Tracking WS connected ✅");
 
       ws.onmessage = (e) => {
         if (!isMounted) return;
         try {
           const data = JSON.parse(e.data);
-          console.log("Tracking data received:", data);
-          if (data.type === "location") {
-            setWsDriverLocation({ lat: data.lat, lng: data.lng });
-            setLastSeen(new Date().toLocaleTimeString());
-          }
+          if (data.type !== "location") return;
+          console.log("Driver at:", data.lat, data.lng);
+          setDriverLocation({ lat: data.lat, lng: data.lng });
+          setLastSeen(new Date().toLocaleTimeString());
+          setDriverPos(`${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}`);
         } catch {}
       };
 
       ws.onclose = () => {
-        console.log("Tracking WS closed — reconnecting in 3s");
         if (isMounted) setTimeout(connect, 3000);
       };
-
       ws.onerror = () => ws.close();
     };
 
-    const timer = setTimeout(connect, 100);
+    const timer = setTimeout(connect, 300);
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      wsRef.current?.close();
-      wsRef.current = null;
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
     };
   }, [stage, order?.id]);
 
-  // Update driver marker — waits for both mapReady and wsDriverLocation
-  useEffect(() => {
-    console.log("=== MARKER EFFECT ===");
-    console.log("mapReady:", mapReady);
-    console.log("wsDriverLocation:", wsDriverLocation);
-    console.log("mapRef.current:", !!mapRef.current);
-
-    if (!mapReady || !wsDriverLocation) {
-      console.log("Skipping — missing dependency");
-      return;
-    }
-    const map = mapRef.current;
-    if (!map) {
-      console.log("Skipping — no map");
-      return;
-    }
-
-    const pos: [number, number] = [wsDriverLocation.lat, wsDriverLocation.lng];
-    console.log("Adding/updating marker at:", pos);
-
-    map.invalidateSize();
-
-    if (driverMarkerRef.current) {
-      console.log("Moving existing marker");
-      driverMarkerRef.current.setLatLng(pos);
-    } else {
-      console.log("Creating NEW marker");
-      driverMarkerRef.current = L.marker(pos, { icon: DRIVER_ICON }).addTo(map);
-      console.log("Marker added to map:", driverMarkerRef.current);
-    }
-
-    // Also fit bounds to include driver location alongside origin/dest
-    if (order) {
-      const bounds = L.latLngBounds([
-        pos,
-        [order.origin_lat, order.origin_lng],
-        [order.destination_lat, order.destination_lng],
-      ]);
-      map.fitBounds(bounds, { padding: [40, 40] });
-      console.log("Map fitted to include driver");
-    } else {
-      map.setView(pos, 12);
-    }
-  }, [wsDriverLocation, mapReady]);
-
   const chatAvailable = order && ["matched", "in-transit"].includes(stage);
+
+  // Build the list of all points for fitting bounds
+  const allPoints: [number, number][] = [];
+  if (order) {
+    allPoints.push([order.origin_lat, order.origin_lng]);
+    allPoints.push([order.destination_lat, order.destination_lng]);
+  }
+  if (driverLocation) {
+    allPoints.push([driverLocation.lat, driverLocation.lng]);
+  }
+
+  const center: [number, number] = order
+    ? [order.origin_lat, order.origin_lng]
+    : [7.2571, 5.2058];
 
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Map */}
-      <div ref={mapDivRef} className="flex-1" style={{ minHeight: "300px" }} />
+      {/* Map — react-leaflet handles lifecycle properly */}
+      <div className="flex-1" style={{ minHeight: "300px" }}>
+        <MapContainer
+          center={center}
+          zoom={order ? 8 : 7}
+          style={{ width: "100%", height: "100%" }}
+          zoomControl={true}
+        >
+          <TileLayer
+            attribution="© OpenStreetMap contributors"
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          {/* Origin marker */}
+          {order && (
+            <Marker
+              position={[order.origin_lat, order.origin_lng]}
+              icon={ORIGIN_ICON}
+            >
+              <Popup>
+                <b>📦 Pickup</b>
+                <br />
+                {order.origin_park}
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Destination marker */}
+          {order && (
+            <Marker
+              position={[order.destination_lat, order.destination_lng]}
+              icon={DEST_ICON}
+            >
+              <Popup>
+                <b>🏁 Destination</b>
+                <br />
+                {order.destination}
+              </Popup>
+            </Marker>
+          )}
+
+          {/* DRIVER MARKER — React component, renders/updates automatically */}
+          {driverLocation && (
+            <Marker
+              position={[driverLocation.lat, driverLocation.lng]}
+              icon={DRIVER_ICON}
+              zIndexOffset={1000}
+            >
+              <Popup>
+                <b>🚗 Your driver</b>
+                <br />
+                Live location
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Route line */}
+          {order && (
+            <Polyline
+              positions={[
+                [order.origin_lat, order.origin_lng],
+                [order.destination_lat, order.destination_lng],
+              ]}
+              pathOptions={{
+                color: "#F5A623",
+                weight: 3,
+                opacity: 0.7,
+                dashArray: "8, 8",
+              }}
+            />
+          )}
+
+          {/* Fit bounds to show all points */}
+          {allPoints.length >= 2 && <FitBounds points={allPoints} />}
+
+          {/* Pan to driver when location updates */}
+          {driverLocation && (
+            <PanTo position={[driverLocation.lat, driverLocation.lng]} />
+          )}
+        </MapContainer>
+      </div>
 
       {/* Idle overlay */}
       {stage === "idle" && (
@@ -250,6 +254,23 @@ export default function LiveMap({
         </div>
       )}
 
+      {/* Searching / matched chip */}
+      {(stage === "searching" || stage === "matched") && order && (
+        <div
+          className="absolute top-3 left-3 right-3 pointer-events-none"
+          style={{ zIndex: 1000 }}
+        >
+          <div className="bg-surface/90 backdrop-blur rounded-xl px-4 py-2.5 flex items-center gap-3">
+            <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
+            <p className="text-light text-xs font-medium">
+              {stage === "searching"
+                ? "Looking for a driver..."
+                : "Driver matched — preparing for pickup"}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Live tracking chip */}
       {stage === "in-transit" && (
         <div
@@ -260,7 +281,9 @@ export default function LiveMap({
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-light text-xs font-medium">
-                Driver location live
+                {driverPos
+                  ? `🚗 Driver at ${driverPos}`
+                  : "Driver location live"}
               </p>
               {lastSeen && (
                 <p className="text-muted text-[10px]">
@@ -275,24 +298,7 @@ export default function LiveMap({
         </div>
       )}
 
-      {/* Searching / matched chip */}
-      {(stage === "searching" || stage === "matched") && order && (
-        <div
-          className="absolute top-3 left-3 right-3 pointer-events-none"
-          style={{ zIndex: 1000 }}
-        >
-          <div className="bg-surface/90 backdrop-blur rounded-xl px-4 py-2.5 flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
-            <p className="text-light text-xs font-medium">
-              {stage === "searching"
-                ? "Looking for a driver..."
-                : "Driver matched — heading to pickup"}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Bottom chips — waybill + distance */}
+      {/* Bottom chips */}
       {order && stage !== "idle" && (
         <div
           className="absolute left-3 right-3 flex items-center justify-between pointer-events-none"
@@ -326,7 +332,6 @@ export default function LiveMap({
         </div>
       )}
 
-      {/* ChatWidget — fixed fullscreen overlay */}
       {showChat && order && (
         <ChatWidget orderId={order.id} onClose={() => setShowChat(false)} />
       )}

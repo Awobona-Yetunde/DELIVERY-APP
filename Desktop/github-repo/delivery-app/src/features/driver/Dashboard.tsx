@@ -102,7 +102,10 @@ export default function DriverDashboard() {
 
   // GPS watch
   useEffect(() => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setDriverLocation({ lat: 7.2571, lng: 5.2058 });
+      return;
+    }
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
         setDriverLocation({
@@ -110,10 +113,11 @@ export default function DriverDashboard() {
           lng: pos.coords.longitude,
         });
       },
-      (err) => {
-        console.log("GPS error:", err.message);
+      () => {
+        // GPS blocked — use Akure as fallback so marker still shows
+        setDriverLocation({ lat: 7.2571, lng: 5.2058 });
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
     );
     return () => {
       if (watchIdRef.current !== null)
