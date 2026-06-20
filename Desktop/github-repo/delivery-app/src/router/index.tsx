@@ -30,11 +30,12 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/admin/dashboard",
-    element: (
-      <ProtectedRoute allowedRole="sender">
-        <AdminDashboard />
-      </ProtectedRoute>
-    ),
+  path: '/admin/dashboard',
+  element: (
+    <ProtectedRoute allowedRole="admin">
+      <AdminDashboard />
+    </ProtectedRoute>
+  ),
   },
+
 ]);

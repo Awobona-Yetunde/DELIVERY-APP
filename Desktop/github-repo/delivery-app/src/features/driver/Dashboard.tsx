@@ -7,6 +7,7 @@ import IncomingOrder from "./components/IncomingOrder";
 import ActiveRun from "./components/ActiveRun";
 import EarningsSummary from "./components/EarningsSummary";
 import DriverMap from "./components/DriverMap";
+import LogoutButton from "../../components/LogoutButton";
 
 export type DriverStatus = "offline" | "online" | "on-delivery";
 
@@ -229,6 +230,7 @@ export default function DriverDashboard() {
                     : "🟡 On delivery"}
               </p>
             </div>
+            <LogoutButton/>
           </div>
         </nav>
 

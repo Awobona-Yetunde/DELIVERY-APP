@@ -31,7 +31,6 @@ export default function Login() {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
 
-      // Store token so /users/me is authenticated
       login(
         {
           id: "",
@@ -45,11 +44,8 @@ export default function Login() {
         data.access_token,
       );
 
-      // Fetch real profile
       const { data: me } = await api.get("/users/me");
 
-      console.log("User profile from backend:", me);
-      
       if (me.role === "driver" && me.is_verified === false) {
         login(
           {
@@ -63,13 +59,10 @@ export default function Login() {
           },
           "",
         );
-        navigate("/verify-otp", {
-          state: { email: me.email, role: "driver" },
-        });
+        navigate("/verify-otp", { state: { email: me.email, role: "driver" } });
         return;
       }
 
-      // Store full verified profile
       setUser({
         id: me.id,
         email: me.email,
@@ -80,14 +73,11 @@ export default function Login() {
         is_superuser: me.is_superuser ?? false,
       });
 
-      // Redirect based on role
-      if (me.is_superuser) {
+      if (me.is_superuser || me.role === "admin") {
         navigate("/admin/dashboard", { replace: true });
-      } else if (me.role === "driver") {
+      } else if (me.role === "driver")
         navigate("/driver/dashboard", { replace: true });
-      } else {
-        navigate("/customer/dashboard", { replace: true });
-      }
+      else navigate("/customer/dashboard", { replace: true });
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       setError(
@@ -99,13 +89,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col lg:flex-row">
-      {/* Left branding panel */}
-      <div className="lg:w-[42%] bg-surface px-8 py-10 lg:px-12 lg:py-14 flex flex-col justify-between gap-10 relative overflow-hidden">
-        <div className="absolute w-72 h-72 rounded-full border-[50px] border-accent/10 -bottom-20 -left-20 pointer-events-none" />
-        <div className="absolute w-44 h-44 rounded-full border-[35px] border-primary/30 top-16 -right-10 pointer-events-none" />
-
-        <div className="flex items-center gap-3 z-10">
+    <div className="min-h-screen bg-surface flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Brand */}
+        <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-xl">
             📦
           </div>
@@ -114,36 +101,9 @@ export default function Login() {
           </span>
         </div>
 
-        <div className="z-10">
-          <h1 className="text-light text-3xl lg:text-4xl font-semibold leading-snug">
-            Welcome
-            <br />
-            back.
-          </h1>
-          <p className="text-muted text-sm mt-4 leading-relaxed">
-            Your packages are waiting. Sign in to track deliveries or pick up
-            your next run.
-          </p>
-        </div>
-
-        <div className="z-10 bg-primary/40 border border-light/5 rounded-2xl px-5 py-4">
-          <p className="text-light text-sm leading-relaxed">
-            "I sent my documents from Akure to Lagos in 4 hours. The driver
-            called me when he arrived. 10/10."
-          </p>
-          <div className="flex items-center gap-2 mt-3">
-            <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs text-accent font-semibold">
-              AO
-            </div>
-            <p className="text-muted text-xs">Adaeze O. — Akure, Ondo State</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 bg-light flex items-center px-6 py-10 lg:px-14">
-        <div className="w-full max-w-md mx-auto">
-          <div className="flex items-center justify-between mb-8">
+        {/* Card */}
+        <div className="bg-light rounded-2xl px-8 py-10">
+          <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => navigate("/")}
               className="flex items-center gap-1.5 text-muted text-xs hover:text-surface transition-colors cursor-pointer"
@@ -158,9 +118,11 @@ export default function Login() {
             </button>
           </div>
 
-          <h2 className="text-surface text-2xl font-semibold mb-1">Sign in</h2>
+          <h2 className="text-surface text-2xl font-semibold mb-1">
+            Welcome back
+          </h2>
           <p className="text-muted text-sm mb-7">
-            Enter your credentials — we'll take you to the right place.
+            Sign in to track deliveries or pick up your next run.
           </p>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -249,6 +211,11 @@ export default function Login() {
             </p>
           </form>
         </div>
+
+        {/* Footer */}
+        <p className="text-center text-muted text-xs mt-6">
+          © 2025 SendRun. Intercity logistics for Ondo State.
+        </p>
       </div>
     </div>
   );

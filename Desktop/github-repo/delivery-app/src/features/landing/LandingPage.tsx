@@ -503,12 +503,19 @@ function QuoteModal({
                   <select
                     value={form.originPark}
                     onChange={(e) => onOriginChange(e.target.value)}
-                    className="w-full bg-white/10 border border-white/10 rounded-xl px-3 h-10
-                      text-sm text-light outline-none focus:border-accent transition-colors"
+                    style={{ colorScheme: "dark" }}
+                    className="w-full bg-[#0D1F17] border border-white/10 rounded-xl px-3 h-10
+                    text-sm text-light outline-none focus:border-accent transition-colors"
                   >
-                    <option value="">Select pickup park</option>
+                    <option value="" className="bg-[#0D1F17] text-[#8A9E95]">
+                      Select pickup park
+                    </option>
                     {origins.map((o: string) => (
-                      <option key={o} value={o}>
+                      <option
+                        key={o}
+                        value={o}
+                        className="bg-[#0D1F17] text-[#F2EDE4]"
+                      >
                         {o}
                       </option>
                     ))}
@@ -517,17 +524,22 @@ function QuoteModal({
                     value={form.destination}
                     onChange={onSet("destination")}
                     disabled={!form.originPark || routes.length === 0}
-                    className="w-full bg-white/10 border border-white/10 rounded-xl px-3 h-10
-                      text-sm text-light outline-none focus:border-accent transition-colors
-                      disabled:opacity-40"
+                    style={{ colorScheme: "dark" }}
+                    className="w-full bg-[#0D1F17] border border-white/10 rounded-xl px-3 h-10
+    text-sm text-light outline-none focus:border-accent transition-colors
+    disabled:opacity-40"
                   >
-                    <option value="">
+                    <option value="" className="bg-[#0D1F17] text-[#8A9E95]">
                       {!form.originPark
                         ? "Select origin first"
                         : "Select destination"}
                     </option>
-                    {routes.map((r: Route) => (
-                      <option key={r.id} value={r.destination}>
+                    {routes.map((r: any) => (
+                      <option
+                        key={r.id}
+                        value={r.destination}
+                        className="bg-[#0D1F17] text-[#F2EDE4]"
+                      >
                         {r.destination}
                       </option>
                     ))}

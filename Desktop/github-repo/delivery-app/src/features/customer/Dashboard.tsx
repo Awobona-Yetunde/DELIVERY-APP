@@ -6,6 +6,7 @@ import BookingPanel from "./components/BookingPanel";
 import ActiveDelivery from "./components/ActiveDelivery";
 import RecentOrders from "./components/RecentOrders";
 import LiveMap from "./components/LiveMap";
+import LogoutButton from "../../components/LogoutButton";
 
 export type DeliveryStage =
   | "idle"
@@ -138,6 +139,7 @@ export default function CustomerDashboard() {
             </p>
             <p className="text-muted text-xs">Sender</p>
           </div>
+          <LogoutButton/>
         </div>
       </nav>
 

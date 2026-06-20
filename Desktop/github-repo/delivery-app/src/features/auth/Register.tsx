@@ -34,8 +34,6 @@ const INITIAL_FORM: FormData = {
   stateOfOperation: "",
 };
 
-
-
 export default function Register() {
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>("sender");
@@ -81,6 +79,7 @@ export default function Register() {
     if (role === "driver") {
       if (!form.plateNumber.trim()) newErrors.plateNumber = "Required";
       if (!form.ninOrLicense.trim()) newErrors.ninOrLicense = "Required";
+      if (!form.stateOfOperation) newErrors.stateOfOperation = "Required";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -123,8 +122,7 @@ export default function Register() {
           address: form.address,
           role: "sender",
         });
-        // Customer goes straight to login
-        navigate("/login", { state: { role: "sender" } });
+        navigate("/login");
       } else {
         await api.post("/auth/driver/register", {
           email: form.email,
@@ -142,7 +140,6 @@ export default function Register() {
           state_of_operation: form.stateOfOperation,
           nin_license: form.ninOrLicense,
         });
-        // Driver goes to OTP
         navigate("/verify-otp", {
           state: { email: form.email, role: "driver" },
         });
@@ -159,13 +156,10 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col lg:flex-row">
-      {/* Left branding panel */}
-      <div className="lg:w-[42%] bg-surface px-8 py-10 lg:px-12 lg:py-14 flex flex-col justify-between gap-10 relative overflow-hidden">
-        <div className="absolute w-72 h-72 rounded-full border-[50px] border-accent/10 -bottom-20 -left-20 pointer-events-none" />
-        <div className="absolute w-44 h-44 rounded-full border-[35px] border-primary/30 top-16 -right-10 pointer-events-none" />
-
-        <div className="flex items-center gap-3 z-10">
+    <div className="min-h-screen bg-surface flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-lg">
+        {/* Brand */}
+        <div className="flex items-center justify-center gap-3 mb-8">
           <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-xl">
             📦
           </div>
@@ -174,55 +168,15 @@ export default function Register() {
           </span>
         </div>
 
-        <div className="z-10">
-          <h1 className="text-light text-3xl lg:text-4xl font-semibold leading-snug">
-            Send anything.
-            <br />
-            Anywhere in
-            <br />
-            Nigeria.
-          </h1>
-          <p className="text-muted text-sm mt-4 leading-relaxed">
-            Book a driver from Ondo to Lagos, Abuja, Port Harcourt — live
-            tracking included.
-          </p>
-        </div>
+        {/* Card */}
+        <div className="bg-light rounded-2xl px-8 py-10">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 text-muted text-xs hover:text-surface transition-colors cursor-pointer mb-6"
+          >
+            ← Back to home
+          </button>
 
-        <div className="flex flex-col gap-3 z-10">
-          {[
-            {
-              icon: "📍",
-              title: "Intercity Delivery",
-              sub: "Ondo → Lagos, Abuja & more",
-            },
-            {
-              icon: "⚡",
-              title: "Real-time Matching",
-              sub: "Drivers accept in seconds",
-            },
-            {
-              icon: "🛡️",
-              title: "Track your package",
-              sub: "Live updates all the way",
-            },
-          ].map((s) => (
-            <div
-              key={s.title}
-              className="flex items-center gap-3 bg-primary/40 border border-light/5 rounded-xl px-4 py-3"
-            >
-              <span className="text-xl">{s.icon}</span>
-              <div>
-                <p className="text-light text-sm font-medium">{s.title}</p>
-                <p className="text-muted text-xs">{s.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 bg-light px-6 py-10 lg:px-14 lg:py-14 overflow-y-auto">
-        <div className="max-w-md mx-auto">
           <h2 className="text-surface text-2xl font-semibold mb-1">
             Create your account
           </h2>
@@ -232,22 +186,20 @@ export default function Register() {
 
           {/* Role selector */}
           <div className="grid grid-cols-2 gap-3 mb-7">
-            {(
-              [
-                {
-                  value: "sender",
-                  label: "Customer",
-                  sub: "I want to send",
-                  icon: "🙋",
-                },
-                {
-                  value: "driver",
-                  label: "Driver",
-                  sub: "I want to deliver",
-                  icon: "🚗",
-                },
-              ] as const
-            ).map((r) => (
+            {[
+              {
+                value: "sender" as const,
+                label: "Customer",
+                sub: "I want to send",
+                icon: "🙋",
+              },
+              {
+                value: "driver" as const,
+                label: "Driver",
+                sub: "I want to deliver",
+                icon: "🚗",
+              },
+            ].map((r) => (
               <button
                 key={r.value}
                 type="button"
@@ -279,20 +231,13 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} noValidate>
-            <div className="flex items-center justify-between mb-6">
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center gap-1.5 text-muted text-xs hover:text-light transition-colors cursor-pointer"
-              >
-                ← Back to home
-              </button>
-            </div>
             {/* Photo upload */}
             <div className="flex items-center gap-5 mb-6">
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="w-20 h-20 rounded-full bg-stone-100 border-2 border-dashed border-stone-300
-                  flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary/60 transition-colors shrink-0"
+                className="w-16 h-16 rounded-full bg-stone-100 border-2 border-dashed border-stone-300
+                  flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary/60
+                  transition-colors flex-shrink-0"
               >
                 {photoPreview ? (
                   <img
@@ -301,7 +246,7 @@ export default function Register() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-3xl">📷</span>
+                  <span className="text-2xl">📷</span>
                 )}
               </div>
               <div>
@@ -310,15 +255,15 @@ export default function Register() {
                 </p>
                 <p className="text-xs text-muted mt-0.5">
                   {role === "driver"
-                    ? "Customers see this when you accept a delivery. Optional."
-                    : "Optional — helps drivers identify you."}
+                    ? "Customers see this. Optional."
+                    : "Optional."}
                 </p>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="mt-2 text-xs text-primary font-medium underline underline-offset-2"
+                  className="mt-1 text-xs text-primary font-medium underline underline-offset-2"
                 >
-                  {photoPreview ? "Change photo" : "Upload photo"}
+                  {photoPreview ? "Change" : "Upload"}
                 </button>
               </div>
               <input
@@ -330,7 +275,7 @@ export default function Register() {
               />
             </div>
 
-            {/* Name */}
+            {/* Name row */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <Field label="First name" error={errors.firstName}>
                 <input
@@ -384,7 +329,7 @@ export default function Register() {
             >
               <input
                 type="text"
-                placeholder="e.g. 12 Alagbaka Estate, Akure, Ondo State"
+                placeholder="e.g. 12 Alagbaka Estate, Akure"
                 value={form.address}
                 onChange={set("address")}
               />
@@ -430,7 +375,7 @@ export default function Register() {
                       disabled={statesLoading}
                     >
                       <option value="">
-                        {statesLoading ? "Loading states..." : "Select state"}
+                        {statesLoading ? "Loading..." : "Select state"}
                       </option>
                       {states.map((s) => (
                         <option key={s} value={s}>
@@ -442,7 +387,7 @@ export default function Register() {
                   <Field label="NIN / License no." error={errors.ninOrLicense}>
                     <input
                       type="text"
-                      placeholder="NIN or license no."
+                      placeholder="NIN or license"
                       value={form.ninOrLicense}
                       onChange={set("ninOrLicense")}
                     />
@@ -465,7 +410,7 @@ export default function Register() {
                   <button
                     type="button"
                     onClick={() => setShowPassword((p) => !p)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-xs cursor-pointer"
                   >
                     {showPassword ? "Hide" : "Show"}
                   </button>
@@ -512,6 +457,10 @@ export default function Register() {
             </p>
           </form>
         </div>
+
+        <p className="text-center text-muted text-xs mt-6">
+          © 2025 SendRun. Intercity logistics for Ondo State.
+        </p>
       </div>
     </div>
   );

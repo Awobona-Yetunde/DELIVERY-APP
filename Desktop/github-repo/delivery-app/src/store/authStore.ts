@@ -6,7 +6,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: "sender" | "driver";
+  role: "sender" | "driver" | "admin";
   phone: string;
   is_superuser: boolean;
 }
