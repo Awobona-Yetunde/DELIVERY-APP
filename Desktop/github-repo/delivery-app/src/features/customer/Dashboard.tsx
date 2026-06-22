@@ -30,7 +30,6 @@ export default function CustomerDashboard() {
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-
   // On mount — fetch customer orders
   useEffect(() => {
     const fetchOrders = async () => {
@@ -59,8 +58,6 @@ export default function CustomerDashboard() {
     fetchOrders();
   }, []);
 
-
-
   // Poll order status when active
   useEffect(() => {
     if (!activeOrder || stage === "idle" || stage === "delivered") return;
@@ -69,8 +66,6 @@ export default function CustomerDashboard() {
       const { data } = await api.get(`/orders/${activeOrder.id}`);
       const newStage = STATUS_TO_STAGE[data.status];
       if (newStage) setStage(newStage);
-
-      // This triggers the driver fetch effect when driver_id appears
       setActiveOrder(data);
 
       if (data.status === "delivered") {
@@ -90,8 +85,6 @@ export default function CustomerDashboard() {
 
     return () => stop();
   }, [activeOrder?.id, stage]);
-
-
 
   const handleBook = (order: any) => {
     setActiveOrder(order);
@@ -122,7 +115,7 @@ export default function CustomerDashboard() {
   return (
     <div className="min-h-screen bg-surface flex flex-col">
       {/* Nav */}
-      <nav className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+      <nav className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-sm">
             📦
@@ -139,14 +132,14 @@ export default function CustomerDashboard() {
             </p>
             <p className="text-muted text-xs">Sender</p>
           </div>
-          <LogoutButton/>
+          <LogoutButton />
         </div>
       </nav>
 
-      {/* Body */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left panel — fixed width, scrollable */}
-        <div className="lg:w-[420px] shrink-0 overflow-y-auto border-r border-white/5">
+      {/* Body — scrollable on mobile, fixed on desktop */}
+      <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
+        {/* Left panel — booking or active delivery */}
+        <div className="lg:w-[420px] flex-shrink-0 lg:overflow-y-auto border-r border-white/5">
           {stage === "idle" ? (
             <BookingPanel onBook={handleBook} />
           ) : (
@@ -158,13 +151,14 @@ export default function CustomerDashboard() {
           )}
         </div>
 
-        {/* Right panel — map fills remaining space */}
-        <div className="flex-1 flex flex-col min-h-[400px] lg:min-h-0">
-          <div className="flex-1 relative">
+        {/* Right panel — map + recent orders */}
+        <div className="flex-1 flex flex-col">
+          {/* Map — fixed 400px on mobile, fills remaining space on desktop */}
+          <div className="h-[400px] lg:h-auto lg:flex-1">
             <LiveMap stage={stage} order={activeOrder} />
           </div>
 
-          {/* Recent orders strip below map when idle */}
+          {/* Recent orders below map when idle */}
           {stage === "idle" && recentOrders.length > 0 && (
             <RecentOrders orders={recentOrders} />
           )}

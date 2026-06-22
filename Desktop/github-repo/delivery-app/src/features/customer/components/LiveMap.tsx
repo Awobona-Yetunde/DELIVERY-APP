@@ -59,6 +59,31 @@ function FitBounds({ points }: { points: [number, number][] }) {
   return null;
 }
 
+function InvalidateOnVisible() {
+  const map = useMap();
+  useEffect(() => {
+    setTimeout(() => map.invalidateSize(), 100);
+    const container = map.getContainer();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          map.invalidateSize();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(container);
+    const handleResize = () => map.invalidateSize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [map]);
+  return null;
+}
+
+
 // Mapbox dark tile URL
 const MAPBOX_TILE_URL = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
 
@@ -173,6 +198,8 @@ export default function LiveMap({
             tileSize={512}
             zoomOffset={-1}
           />
+
+          <InvalidateOnVisible />
 
           {/* Origin marker */}
           {order && (

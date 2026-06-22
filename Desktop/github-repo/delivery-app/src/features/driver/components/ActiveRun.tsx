@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../../lib/api";
 import type { Order } from "../Dashboard";
 
@@ -169,6 +169,12 @@ export default function ActiveRun({
     }
   };
 
+  // ADD THIS — sync stage when order status updates from backend
+  useEffect(() => {
+    const correctStage = getInitialStage(order.status);
+    setStage(correctStage);
+  }, [order.status]);
+
   return (
     <>
       <div className="space-y-4">
@@ -233,8 +239,6 @@ export default function ActiveRun({
             )}
           </button>
         </div>
-
-      
 
         {/* Recipient contact card */}
         <div className="bg-primary/20 rounded-xl px-4 py-3">

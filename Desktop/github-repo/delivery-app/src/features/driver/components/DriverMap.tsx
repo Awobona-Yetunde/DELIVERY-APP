@@ -31,6 +31,7 @@ const PICKUP_ICON = L.divIcon({
   iconAnchor: [18, 18],
 });
 
+
 const DEST_ICON = L.divIcon({
   html: `<div style="background:#0D1F17;width:36px;height:36px;border-radius:50%;
     border:3px solid white;display:flex;align-items:center;justify-content:center;
@@ -48,6 +49,30 @@ function FitBounds({ points }: { points: [number, number][] }) {
     if (points.length < 2) return;
     map.fitBounds(L.latLngBounds(points), { padding: [60, 60] });
   }, [points, map]);
+  return null;
+}
+
+function InvalidateOnVisible() {
+  const map = useMap();
+  useEffect(() => {
+    setTimeout(() => map.invalidateSize(), 100);
+    const container = map.getContainer();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          map.invalidateSize();
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(container);
+    const handleResize = () => map.invalidateSize();
+    window.addEventListener("resize", handleResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [map]);
   return null;
 }
 
@@ -109,6 +134,8 @@ export default function DriverMap({
             tileSize={512}
             zoomOffset={-1}
           />
+
+          <InvalidateOnVisible />
 
           {/* Driver's own location */}
           {driverLocation && (

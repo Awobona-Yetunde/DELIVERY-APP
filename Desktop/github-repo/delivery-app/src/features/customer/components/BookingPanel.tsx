@@ -70,6 +70,8 @@ export default function BookingPanel({
   const [originsLoading, setOriginsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [estimatedPrice, setEstimatedPrice] = useState<any>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
 
   const today = new Date();
   const dayOfWeek = today.getDay();
@@ -119,6 +121,7 @@ export default function BookingPanel({
     ) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
       setSubmitError("");
+      setEstimatedPrice(null);
     };
 
   const step1Complete =
@@ -131,9 +134,24 @@ export default function BookingPanel({
 
   const step2Complete = form.recipientName && form.recipientPhone;
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!step1Complete) return;
-    setStep(2);
+    setPriceLoading(true);
+    try {
+      const { data } = await api.post("/pricing/quick-quote", {
+        origin_park: form.originPark,
+        destination: form.destination,
+        package_size: form.packageSize,
+        package_weight: form.packageWeight,
+        vehicle_type: form.vehicleType,
+      });
+      setEstimatedPrice(data);
+    } catch {
+      setEstimatedPrice(null);
+    } finally {
+      setPriceLoading(false);
+      setStep(2);
+    }
   };
 
   const handleBook = async () => {
@@ -184,6 +202,7 @@ export default function BookingPanel({
             key={s}
             onClick={() => {
               if (s === 2 && !step1Complete) return;
+              if (s === 1) setEstimatedPrice(null);
               setStep(s as 1 | 2);
             }}
             className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer
@@ -196,20 +215,18 @@ export default function BookingPanel({
 
       {step === 1 && (
         <div className="space-y-4">
-
           {/* Route */}
           <div className="bg-primary/30 rounded-2xl p-4 space-y-3">
             <p className="text-muted text-[10px] font-semibold uppercase tracking-wide">
               Route
             </p>
             <div className="flex items-center gap-3">
-              <div className="flex flex-col items-center gap-1 shrink-0">
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
                 <div className="w-2.5 h-2.5 rounded-full bg-accent" />
                 <div className="w-px h-6 bg-muted/30" />
                 <div className="w-2.5 h-2.5 rounded-full border-2 border-light" />
               </div>
               <div className="flex-1 space-y-2">
-
                 {/* Origin select */}
                 <select
                   value={form.originPark}
@@ -219,18 +236,16 @@ export default function BookingPanel({
                       originPark: e.target.value,
                       destination: "",
                     }));
+                    setEstimatedPrice(null);
                   }}
                   disabled={originsLoading}
                   style={{ colorScheme: "dark" }}
                   className={SELECT_CLASS}
                 >
-                  <option
-                    value=""
-                    className="bg-[#0D1F17] text-[#8A9E95]"
-                  >
+                  <option value="" className="bg-[#0D1F17] text-[#8A9E95]">
                     {originsLoading
                       ? "Loading parks..."
-                      : "Pickup park"}
+                      : "Pickup park — where from?"}
                   </option>
                   {origins.map((o) => (
                     <option
@@ -251,15 +266,12 @@ export default function BookingPanel({
                   style={{ colorScheme: "dark" }}
                   className={`${SELECT_CLASS} disabled:opacity-40`}
                 >
-                  <option
-                    value=""
-                    className="bg-[#0D1F17] text-[#8A9E95]"
-                  >
+                  <option value="" className="bg-[#0D1F17] text-[#8A9E95]">
                     {!form.originPark
                       ? "Select origin first"
                       : routes.length === 0
-                      ? "Loading destinations..."
-                      : "where to?"}
+                        ? "Loading destinations..."
+                        : "Destination — where to?"}
                   </option>
                   {routes.map((r) => (
                     <option
@@ -300,9 +312,10 @@ export default function BookingPanel({
               {PACKAGE_SIZES.map((s) => (
                 <button
                   key={s.value}
-                  onClick={() =>
-                    setForm((prev) => ({ ...prev, packageSize: s.value }))
-                  }
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, packageSize: s.value }));
+                    setEstimatedPrice(null);
+                  }}
                   className={`px-3 py-2.5 rounded-xl border text-left transition-all cursor-pointer
                     ${
                       form.packageSize === s.value
@@ -311,11 +324,7 @@ export default function BookingPanel({
                     }`}
                 >
                   <p
-                    className={`text-xs font-medium ${
-                      form.packageSize === s.value
-                        ? "text-accent"
-                        : "text-light"
-                    }`}
+                    className={`text-xs font-medium ${form.packageSize === s.value ? "text-accent" : "text-light"}`}
                   >
                     {s.label}
                   </p>
@@ -334,9 +343,10 @@ export default function BookingPanel({
               {PACKAGE_WEIGHTS.map((w) => (
                 <button
                   key={w.value}
-                  onClick={() =>
-                    setForm((prev) => ({ ...prev, packageWeight: w.value }))
-                  }
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, packageWeight: w.value }));
+                    setEstimatedPrice(null);
+                  }}
                   className={`px-3 py-2.5 rounded-xl border text-left transition-all cursor-pointer
                     ${
                       form.packageWeight === w.value
@@ -345,11 +355,7 @@ export default function BookingPanel({
                     }`}
                 >
                   <p
-                    className={`text-xs font-medium ${
-                      form.packageWeight === w.value
-                        ? "text-accent"
-                        : "text-light"
-                    }`}
+                    className={`text-xs font-medium ${form.packageWeight === w.value ? "text-accent" : "text-light"}`}
                   >
                     {w.label}
                   </p>
@@ -368,9 +374,10 @@ export default function BookingPanel({
               {VEHICLE_TYPES.map((v) => (
                 <button
                   key={v.value}
-                  onClick={() =>
-                    setForm((prev) => ({ ...prev, vehicleType: v.value }))
-                  }
+                  onClick={() => {
+                    setForm((prev) => ({ ...prev, vehicleType: v.value }));
+                    setEstimatedPrice(null);
+                  }}
                   className={`flex items-center gap-2 px-3 py-3 rounded-xl border transition-all cursor-pointer
                     ${
                       form.vehicleType === v.value
@@ -381,11 +388,7 @@ export default function BookingPanel({
                   <span className="text-xl">{v.icon}</span>
                   <div className="text-left">
                     <p
-                      className={`text-xs font-medium ${
-                        form.vehicleType === v.value
-                          ? "text-accent"
-                          : "text-light"
-                      }`}
+                      className={`text-xs font-medium ${form.vehicleType === v.value ? "text-accent" : "text-light"}`}
                     >
                       {v.label}
                     </p>
@@ -397,20 +400,26 @@ export default function BookingPanel({
           </div>
 
           <button
-            disabled={!step1Complete}
+            disabled={!step1Complete || priceLoading}
             onClick={handleContinue}
             className="w-full h-11 bg-accent text-surface font-semibold rounded-xl text-sm
               disabled:opacity-40 hover:bg-amber-400 transition-colors cursor-pointer
-              disabled:cursor-not-allowed"
+              disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            Continue →
+            {priceLoading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-surface border-t-transparent rounded-full animate-spin" />
+                Getting price...
+              </>
+            ) : (
+              "Continue →"
+            )}
           </button>
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-4">
-
           {/* Route summary */}
           <div className="flex items-center gap-2 bg-primary/30 rounded-xl px-4 py-2.5">
             <span className="text-accent text-xs font-semibold">
@@ -421,25 +430,63 @@ export default function BookingPanel({
               {form.destination}
             </span>
             <button
-              onClick={() => setStep(1)}
+              onClick={() => {
+                setStep(1);
+                setEstimatedPrice(null);
+              }}
               className="ml-auto text-muted text-[10px] hover:text-accent cursor-pointer"
             >
               Edit
             </button>
           </div>
 
+          {/* Price estimate card */}
+          {estimatedPrice && (
+            <div className="bg-primary/40 border border-accent/30 rounded-2xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted text-[10px] uppercase tracking-wide font-semibold">
+                    Estimated price
+                  </p>
+                  <p className="text-accent text-2xl font-bold mt-0.5">
+                    ₦
+                    {estimatedPrice.price?.toLocaleString("en-NG", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-muted text-[10px]">Distance</p>
+                  <p className="text-light text-sm font-semibold">
+                    {estimatedPrice.distance_km} km
+                  </p>
+                  {estimatedPrice.estimated_duration_mins && (
+                    <>
+                      <p className="text-muted text-[10px] mt-1">Est. time</p>
+                      <p className="text-light text-sm font-semibold">
+                        ~{estimatedPrice.estimated_duration_mins} mins
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2 mt-3 bg-accent/10 border border-accent/20 rounded-xl px-3 py-2">
+                <span className="text-sm">🤖</span>
+                <p className="text-accent text-[10px]">
+                  ML-estimated price based on route, package & conditions. Final
+                  amount confirmed after booking.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Package summary chips */}
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: "Size", value: form.packageSize.replace(/_/g, " ") },
-              {
-                label: "Weight",
-                value: form.packageWeight.replace(/_/g, " "),
-              },
-              {
-                label: "Vehicle",
-                value: form.vehicleType.replace(/_/g, " "),
-              },
+              { label: "Weight", value: form.packageWeight.replace(/_/g, " ") },
+              { label: "Vehicle", value: form.vehicleType.replace(/_/g, " ") },
             ].map((s) => (
               <div
                 key={s.label}
@@ -488,15 +535,6 @@ export default function BookingPanel({
             </div>
           </div>
 
-          {/* ML pricing note */}
-          <div className="flex items-start gap-2 bg-accent/10 border border-accent/20 rounded-xl px-3 py-2.5">
-            <span className="text-base shrink-0">🤖</span>
-            <p className="text-accent text-xs leading-relaxed">
-              Price is calculated by our ML model based on your route, package,
-              and current conditions. You'll see the final price after booking.
-            </p>
-          </div>
-
           {/* Error */}
           {submitError && (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-3 py-2.5">
@@ -504,7 +542,7 @@ export default function BookingPanel({
             </div>
           )}
 
-          {/* Book button */}
+          {/* Book button with price */}
           <button
             disabled={!step2Complete || submitting}
             onClick={handleBook}
@@ -519,7 +557,12 @@ export default function BookingPanel({
                 Placing order...
               </>
             ) : (
-              <>🚀 Book delivery</>
+              <>
+                🚀 Book delivery
+                {estimatedPrice
+                  ? ` · ₦${estimatedPrice.price?.toLocaleString()}`
+                  : ""}
+              </>
             )}
           </button>
         </div>

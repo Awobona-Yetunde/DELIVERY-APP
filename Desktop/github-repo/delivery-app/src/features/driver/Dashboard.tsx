@@ -31,7 +31,7 @@ export interface Order {
   recipient_phone: string;
   status: string;
   route_risk: number;
-  sender_name?: string; 
+  sender_name?: string;
   sender_phone?: string;
 }
 
@@ -64,7 +64,7 @@ export default function DriverDashboard() {
   const stopPollingRef = useRef<(() => void) | null>(null);
   const watchIdRef = useRef<number | null>(null);
 
-  // Persist status + activeRun whenever they change
+  // Persist status + activeRun
   useEffect(() => {
     saveSession(status, activeRun);
   }, [status, activeRun]);
@@ -77,17 +77,14 @@ export default function DriverDashboard() {
         const orders: Order[] = Array.isArray(data)
           ? data
           : (data?.orders ?? []);
-
         const active = orders.find((o) =>
           ["accepted", "picked_up", "in_transit"].includes(o.status),
         );
-
         if (active) {
           setActiveRun(active);
           setStatus("on-delivery");
           saveSession("on-delivery", active);
         } else {
-          // No active order — clear everything regardless of localStorage
           setActiveRun(null);
           setStatus("offline");
           localStorage.removeItem(STORAGE_KEY);
@@ -115,7 +112,6 @@ export default function DriverDashboard() {
         });
       },
       () => {
-        // GPS blocked — use Akure as fallback so marker still shows
         setDriverLocation({ lat: 7.2571, lng: 5.2058 });
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
@@ -131,7 +127,6 @@ export default function DriverDashboard() {
     if (status !== "on-delivery" || !activeRun || !driverLocation) return;
     const stop = startPolling(async () => {
       if (!driverLocation) return;
-      console.log("Pushing location:", driverLocation);
       try {
         await api.post("/tracking/update", {
           order_id: activeRun.id,
@@ -140,10 +135,7 @@ export default function DriverDashboard() {
           accuracy: 10,
           timestamp: Math.floor(Date.now() / 1000),
         });
-        console.log("Location pushed ✅");
-      } catch (err) {
-        console.log("Location push failed ❌", err);
-      }
+      } catch {}
     }, 15000);
     return () => stop();
   }, [status, activeRun?.id, driverLocation]);
@@ -201,10 +193,9 @@ export default function DriverDashboard() {
 
   return (
     <>
-      {/* Main layout */}
       <div className="min-h-screen bg-surface flex flex-col">
         {/* Nav */}
-        <nav className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+        <nav className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-sm">
               📦
@@ -230,15 +221,16 @@ export default function DriverDashboard() {
                     : "🟡 On delivery"}
               </p>
             </div>
-            <LogoutButton/>
+            <LogoutButton />
           </div>
         </nav>
 
-        {/* Body */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Body — scrollable on mobile, fixed on desktop */}
+        <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
           {/* Left panel */}
-          <div className="lg:w-[400px] flex-shrink-0 overflow-y-auto border-r border-white/5 p-5 space-y-5">
+          <div className="lg:w-[400px] flex-shrink-0 lg:overflow-y-auto border-r border-white/5 p-5 space-y-5">
             <DriverStatusToggle status={status} onToggle={handleToggle} />
+
             <EarningsSummary status={status} />
 
             {activeRun && (
@@ -271,8 +263,8 @@ export default function DriverDashboard() {
             )}
           </div>
 
-          {/* Right panel — map */}
-          <div className="flex-1 relative min-h-[400px] lg:min-h-0">
+          {/* Right panel — map with explicit mobile height */}
+          <div className="h-[400px] lg:h-auto lg:flex-1">
             <DriverMap
               status={status}
               activeRun={activeRun}
@@ -282,9 +274,9 @@ export default function DriverDashboard() {
         </div>
       </div>
 
-      {/* Incoming order — rendered OUTSIDE layout so nothing overlaps it */}
+      {/* Incoming order — rendered outside layout so nothing overlaps it */}
       {incomingOrder && (
-        <div className="fixed inset-0 z-[9999]">
+        <div className="fixed inset-0" style={{ zIndex: 9999 }}>
           <IncomingOrder
             order={incomingOrder}
             onAccept={handleAccept}
