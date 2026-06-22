@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState,  } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -49,13 +49,13 @@ const DEST_ICON = L.divIcon({
   iconAnchor: [18, 18],
 });
 
-// Fits map to show all markers
 function FitBounds({ points }: { points: [number, number][] }) {
   const map = useMap();
+  const pointsKey = points.map((p) => `${p[0]},${p[1]}`).join(";");
   useEffect(() => {
     if (points.length < 2) return;
     map.fitBounds(L.latLngBounds(points), { padding: [60, 60] });
-  }, [points, map]);
+  }, [pointsKey, map]);
   return null;
 }
 
@@ -83,8 +83,6 @@ function InvalidateOnVisible() {
   return null;
 }
 
-
-// Mapbox dark tile URL
 const MAPBOX_TILE_URL = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
 
 export default function LiveMap({
@@ -122,9 +120,11 @@ export default function LiveMap({
     fetchRoute();
   }, [order?.id]);
 
-  // WebSocket for live driver location
+  // WebSocket for live driver location — connects when matched OR in-transit
   useEffect(() => {
-    if (stage !== "in-transit" || !order?.id) {
+    const shouldConnect =
+      (stage === "in-transit" || stage === "matched") && order?.id;
+    if (!shouldConnect) {
       if (wsRef.current) {
         wsRef.current.close();
         wsRef.current = null;
@@ -133,29 +133,47 @@ export default function LiveMap({
     }
 
     let isMounted = true;
+
     const connect = () => {
       if (!isMounted) return;
+      console.log("Connecting tracking WS...");
+
       const ws = new WebSocket(`${WS_URL}/tracking/ws/${order.id}`);
       wsRef.current = ws;
 
       ws.onopen = () => console.log("Tracking WS connected ✅");
+
       ws.onmessage = (e) => {
         if (!isMounted) return;
         try {
           const data = JSON.parse(e.data);
-          if (data.type !== "location") return;
-          setDriverLocation({ lat: data.lat, lng: data.lng });
-          setLastSeen(new Date().toLocaleTimeString());
-          setDriverPos(`${data.lat.toFixed(4)}, ${data.lng.toFixed(4)}`);
-        } catch {}
+          console.log("WS data received:", data);
+
+          // Accept data with OR without type field
+          // Backend might send {type: "location", lat, lng} or just {lat, lng}
+          const lat = data.lat;
+          const lng = data.lng;
+
+          if (lat !== undefined && lng !== undefined) {
+            console.log("Setting driver location:", lat, lng);
+            setDriverLocation({ lat, lng });
+            setLastSeen(new Date().toLocaleTimeString());
+            setDriverPos(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+          }
+        } catch (err) {
+          console.log("WS parse error:", err);
+        }
       };
+
       ws.onclose = () => {
+        console.log("Tracking WS closed — reconnecting in 3s");
         if (isMounted) setTimeout(connect, 3000);
       };
       ws.onerror = () => ws.close();
     };
 
     const timer = setTimeout(connect, 300);
+
     return () => {
       isMounted = false;
       clearTimeout(timer);
@@ -168,7 +186,7 @@ export default function LiveMap({
 
   const chatAvailable = order && ["matched", "in-transit"].includes(stage);
 
-  // Build bounds to fit all points
+  // Build bounds points — include driver if available
   const boundsPoints: [number, number][] = [];
   if (order) {
     boundsPoints.push([order.origin_lat, order.origin_lng]);
@@ -191,14 +209,12 @@ export default function LiveMap({
           style={{ width: "100%", height: "100%" }}
           zoomControl={true}
         >
-          {/* Mapbox dark tiles — Uber-like look */}
           <TileLayer
             attribution='© <a href="https://www.mapbox.com/">Mapbox</a>'
             url={MAPBOX_TILE_URL}
             tileSize={512}
             zoomOffset={-1}
           />
-
           <InvalidateOnVisible />
 
           {/* Origin marker */}
@@ -235,7 +251,7 @@ export default function LiveMap({
             </Marker>
           )}
 
-          {/* Driver marker — moves in real time */}
+          {/* DRIVER MARKER — renders when driverLocation is set */}
           {driverLocation && (
             <Marker
               position={[driverLocation.lat, driverLocation.lng]}
@@ -251,19 +267,13 @@ export default function LiveMap({
             </Marker>
           )}
 
-          {/* Actual driving route — highlighted like Uber */}
+          {/* Actual driving route */}
           {routePath.length > 0 && (
             <>
-              {/* Route shadow for depth */}
               <Polyline
                 positions={routePath}
-                pathOptions={{
-                  color: "#000000",
-                  weight: 8,
-                  opacity: 0.2,
-                }}
+                pathOptions={{ color: "#000000", weight: 8, opacity: 0.2 }}
               />
-              {/* Main route line — blue like Uber */}
               <Polyline
                 positions={routePath}
                 pathOptions={{
@@ -277,7 +287,7 @@ export default function LiveMap({
             </>
           )}
 
-          {/* Fallback straight line if route hasn't loaded yet */}
+          {/* Fallback straight line */}
           {order && routePath.length === 0 && !routeLoading && (
             <Polyline
               positions={[
@@ -293,7 +303,7 @@ export default function LiveMap({
             />
           )}
 
-          {/* Fit map bounds */}
+          {/* Fit bounds to show all points including driver */}
           {boundsPoints.length >= 2 && <FitBounds points={boundsPoints} />}
         </MapContainer>
       </div>
@@ -316,7 +326,7 @@ export default function LiveMap({
         </div>
       )}
 
-      {/* Route loading indicator */}
+      {/* Route loading */}
       {routeLoading && stage !== "idle" && (
         <div
           className="absolute top-3 left-3 right-3 pointer-events-none"
@@ -344,6 +354,11 @@ export default function LiveMap({
                   ? "Looking for a driver..."
                   : "Driver matched — preparing for pickup"}
               </p>
+              {driverLocation && stage === "matched" && (
+                <span className="text-accent text-[10px] font-semibold ml-auto">
+                  🚗 Driver visible on map
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -391,6 +406,24 @@ export default function LiveMap({
             <p className="text-muted text-[10px]">Distance</p>
             <p className="text-light text-xs font-bold">
               {order.distance_km} km
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Price chip — shows order price when available */}
+      {order && order.price && stage !== "idle" && (
+        <div
+          className="absolute left-3 pointer-events-none"
+          style={{ bottom: chatAvailable ? "116px" : "56px", zIndex: 1000 }}
+        >
+          <div className="bg-accent/90 backdrop-blur rounded-xl px-3 py-2">
+            <p className="text-surface text-[10px] font-semibold">Price</p>
+            <p className="text-surface text-sm font-bold">
+              ₦
+              {order.price?.toLocaleString("en-NG", {
+                minimumFractionDigits: 2,
+              })}
             </p>
           </div>
         </div>
