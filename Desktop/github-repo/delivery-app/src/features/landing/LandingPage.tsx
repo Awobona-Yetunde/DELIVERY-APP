@@ -1,129 +1,145 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../../lib/api'
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../lib/api";
+import { useAuthStore } from "../../store/authStore";
 
 const PACKAGE_SIZES = [
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-  { value: 'extra_large', label: 'Extra Large' },
-]
+  { value: "small", label: "Small" },
+  { value: "medium", label: "Medium" },
+  { value: "large", label: "Large" },
+  { value: "extra_large", label: "Extra Large" },
+];
 
 const PACKAGE_WEIGHTS = [
-  { value: 'very_light', label: 'Very Light' },
-  { value: 'light', label: 'Light' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'heavy', label: 'Heavy' },
-]
+  { value: "very_light", label: "Very Light" },
+  { value: "light", label: "Light" },
+  { value: "medium", label: "Medium" },
+  { value: "heavy", label: "Heavy" },
+];
 
 const VEHICLE_TYPES = [
-  { value: 'small_car', label: 'Small Car', icon: '🚗' },
-  { value: 'big_bus', label: 'Big Bus', icon: '🚌' },
-]
+  { value: "small_car", label: "Small Car", icon: "🚗" },
+  { value: "big_bus", label: "Big Bus", icon: "🚌" },
+];
 
 interface Route {
-  id: string
-  origin: string
-  destination: string
-  distance_km: number
-  estimated_duration_mins: number
-  risk_level: number
-}
-
-interface QuoteResult {
-  estimated_price: number
-  distance_km: number
-  estimated_duration_mins: number
-  origin_park: string
-  destination: string
-  vehicle_type: string
-  package_size: string
-  package_weight: string
+  id: string;
+  origin: string;
+  destination: string;
+  distance_km: number;
+  estimated_duration_mins: number;
+  risk_level: number;
 }
 
 export default function LandingPage() {
-  const navigate = useNavigate()
-  const [showQuote, setShowQuote] = useState(false)
-  const [origins, setOrigins] = useState<string[]>([])
-  const [routes, setRoutes] = useState<Route[]>([])
+  const navigate = useNavigate();
+  const { user, token } = useAuthStore();
+  const isLoggedIn = !!token && !!user;
+
+  const [showQuote, setShowQuote] = useState(false);
+  const [origins, setOrigins] = useState<string[]>([]);
+  const [routes, setRoutes] = useState<Route[]>([]);
   const [form, setForm] = useState({
-    originPark: '',
-    destination: '',
-    packageSize: 'medium',
-    packageWeight: 'light',
-    vehicleType: 'small_car',
-  })
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<QuoteResult | null>(null)
-  const [error, setError] = useState('')
+    originPark: "",
+    destination: "",
+    packageSize: "medium",
+    packageWeight: "light",
+    vehicleType: "small_car",
+  });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetch_ = async () => {
       try {
-        const { data } = await api.get('/routes/origins')
-        setOrigins(Array.isArray(data) ? data : data?.origins ?? [])
+        const { data } = await api.get("/routes/origins");
+        setOrigins(Array.isArray(data) ? data : (data?.origins ?? []));
       } catch {}
-    }
-    fetch_()
-  }, [])
+    };
+    fetch_();
+  }, []);
 
   useEffect(() => {
-    if (!form.originPark) { setRoutes([]); return }
+    if (!form.originPark) {
+      setRoutes([]);
+      return;
+    }
     const fetch_ = async () => {
       try {
-        const { data } = await api.get('/routes/destinations', {
-          params: { origin: form.originPark }
-        })
-        setRoutes(Array.isArray(data) ? data : [])
+        const { data } = await api.get("/routes/destinations", {
+          params: { origin: form.originPark },
+        });
+        setRoutes(Array.isArray(data) ? data : []);
       } catch {}
-    }
-    fetch_()
-  }, [form.originPark])
-
-  const set = (field: string) =>
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setForm(prev => ({ ...prev, [field]: e.target.value }))
-      setResult(null)
-      setError('')
-    }
+    };
+    fetch_();
+  }, [form.originPark]);
 
   const handleQuote = async () => {
     if (!form.originPark || !form.destination) {
-      setError('Please select origin and destination.')
-      return
+      setError("Please select origin and destination.");
+      return;
     }
-    setLoading(true)
-    setError('')
-    setResult(null)
+    setLoading(true);
+    setError("");
+    setResult(null);
     try {
-      const { data } = await api.post('/pricing/quick-quote', {
+      const { data } = await api.post("/pricing/quick-quote", {
         origin_park: form.originPark,
         destination: form.destination,
         package_size: form.packageSize,
         package_weight: form.packageWeight,
         vehicle_type: form.vehicleType,
-      })
-      setResult(data)
-    } catch (err: any) {
-      setError('Could not get a quote right now. Try again.')
+      });
+      setResult(data);
+    } catch {
+      setError("Could not get a quote right now. Try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const goToDashboard = () => {
+    if (user?.role === "admin" || user?.is_superuser)
+      navigate("/admin/dashboard");
+    else if (user?.role === "driver") navigate("/driver/dashboard");
+    else navigate("/customer/dashboard");
+  };
 
   const STATS = [
-    { value: '500+', label: 'Deliveries made' },
-    { value: '37', label: 'States covered' },
-    { value: '98%', label: 'On-time rate' },
-    { value: '4.9★', label: 'Average rating' },
-  ]
+    { value: "500+", label: "Deliveries made" },
+    { value: "37", label: "States covered" },
+    { value: "98%", label: "On-time rate" },
+    { value: "4.9★", label: "Average rating" },
+  ];
 
   const HOW = [
-    { step: '01', icon: '📦', title: 'Book a delivery', desc: 'Choose your route, package type, and vehicle. Get an instant ML-powered price.' },
-    { step: '02', icon: '🚗', title: 'Driver picks up at park', desc: 'A verified driver accepts your order and picks up your package at the motor park.' },
-    { step: '03', icon: '📍', title: 'Track in real time', desc: 'Watch your driver move on the map all the way to the destination.' },
-    { step: '04', icon: '🎉', title: 'Package delivered', desc: 'Recipient gets the package. You get notified instantly.' },
-  ]
+    {
+      step: "01",
+      icon: "📦",
+      title: "Book a delivery",
+      desc: "Choose your route, package type, and vehicle. Get an instant ML-powered price.",
+    },
+    {
+      step: "02",
+      icon: "🚗",
+      title: "Driver picks up at park",
+      desc: "A verified driver accepts your order and picks up your package at the motor park.",
+    },
+    {
+      step: "03",
+      icon: "📍",
+      title: "Track in real time",
+      desc: "Watch your driver move on the map all the way to the destination.",
+    },
+    {
+      step: "04",
+      icon: "🎉",
+      title: "Package delivered",
+      desc: "Recipient gets the package. You get notified instantly.",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-surface flex flex-col">
@@ -145,28 +161,40 @@ export default function LandingPage() {
           >
             🧮 Get a quote
           </button>
-          <button
-            onClick={() => navigate("/login")}
-            className="px-4 py-2 rounded-xl border border-white/10 text-light text-sm
-              font-medium hover:bg-white/5 transition-colors cursor-pointer"
-          >
-            Sign in
-          </button>
-          <button
-            onClick={() => navigate("/register")}
-            className="px-4 py-2 rounded-xl bg-accent text-surface text-sm
-              font-semibold hover:bg-amber-400 transition-colors cursor-pointer"
-          >
-            Get started
-          </button>
+
+          {isLoggedIn ? (
+            <button
+              onClick={goToDashboard}
+              className="px-4 py-2 rounded-xl bg-accent text-surface text-sm
+                font-semibold hover:bg-amber-400 transition-colors cursor-pointer"
+            >
+              Dashboard →
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-4 py-2 rounded-xl border border-white/10 text-light text-sm
+                  font-medium hover:bg-white/5 transition-colors cursor-pointer"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => navigate("/register")}
+                className="px-4 py-2 rounded-xl bg-accent text-surface text-sm
+                  font-semibold hover:bg-amber-400 transition-colors cursor-pointer"
+              >
+                Get started
+              </button>
+            </>
+          )}
         </div>
       </nav>
 
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center px-6 py-20 text-center relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute w-125 h-125 rounded-full border-80 border-accent/5 -top-40 -right-40 pointer-events-none" />
-        <div className="absolute w-75 h-75 rounded-full border-60 border-primary/40 -bottom-20 -left-20 pointer-events-none" />
+        <div className="absolute w-[500px] h-[500px] rounded-full border-[80px] border-accent/5 -top-40 -right-40 pointer-events-none" />
+        <div className="absolute w-[300px] h-[300px] rounded-full border-[60px] border-primary/40 -bottom-20 -left-20 pointer-events-none" />
 
         <div
           className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20
@@ -191,13 +219,23 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-16">
-          <button
-            onClick={() => navigate("/register")}
-            className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl text-base
-              hover:bg-amber-400 transition-colors cursor-pointer flex items-center justify-center gap-2"
-          >
-            🚀 Start sending packages
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={goToDashboard}
+              className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl text-base
+                hover:bg-amber-400 transition-colors cursor-pointer flex items-center justify-center gap-2"
+            >
+              📦 Go to dashboard
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/register")}
+              className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl text-base
+                hover:bg-amber-400 transition-colors cursor-pointer flex items-center justify-center gap-2"
+            >
+              🚀 Start sending packages
+            </button>
+          )}
           <button
             onClick={() => setShowQuote(true)}
             className="px-8 py-4 bg-primary/40 border border-white/10 text-light font-semibold
@@ -306,27 +344,41 @@ export default function LandingPage() {
       <section className="px-6 py-16 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-light text-3xl font-bold mb-4">
-            Ready to send your first package?
+            {isLoggedIn
+              ? "Ready to send another package?"
+              : "Ready to send your first package?"}
           </h2>
           <p className="text-muted text-sm mb-8 leading-relaxed">
             Join hundreds of Nigerians already using SendRun to move packages
             across states safely and affordably.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={() => navigate("/register")}
-              className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl
-                hover:bg-amber-400 transition-colors cursor-pointer"
-            >
-              Create a free account
-            </button>
-            <button
-              onClick={() => navigate("/login")}
-              className="px-8 py-4 border border-white/10 text-light font-semibold
-                rounded-2xl hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              Sign in to existing account
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={goToDashboard}
+                className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl
+                  hover:bg-amber-400 transition-colors cursor-pointer"
+              >
+                Go to dashboard
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate("/register")}
+                  className="px-8 py-4 bg-accent text-surface font-bold rounded-2xl
+                    hover:bg-amber-400 transition-colors cursor-pointer"
+                >
+                  Create a free account
+                </button>
+                <button
+                  onClick={() => navigate("/login")}
+                  className="px-8 py-4 border border-white/10 text-light font-semibold
+                    rounded-2xl hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  Sign in to existing account
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -349,18 +401,29 @@ export default function LandingPage() {
           >
             Get a quote
           </button>
-          <button
-            onClick={() => navigate("/register")}
-            className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
-          >
-            Sign up
-          </button>
-          <button
-            onClick={() => navigate("/login")}
-            className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
-          >
-            Sign in
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={goToDashboard}
+              className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
+            >
+              Dashboard
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate("/register")}
+                className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
+              >
+                Sign up
+              </button>
+              <button
+                onClick={() => navigate("/login")}
+                className="text-muted text-xs hover:text-accent transition-colors cursor-pointer"
+              >
+                Sign in
+              </button>
+            </>
+          )}
         </div>
       </footer>
 
@@ -373,20 +436,29 @@ export default function LandingPage() {
           result={result}
           loading={loading}
           error={error}
-          onSet={set}
+          isLoggedIn={isLoggedIn}
+          onSet={(field: string) =>
+            (e: React.ChangeEvent<HTMLSelectElement>) => {
+              setForm((prev) => ({ ...prev, [field]: e.target.value }));
+              setResult(null);
+              setError("");
+            }}
           onOriginChange={(val: string) => {
             setForm((prev) => ({ ...prev, originPark: val, destination: "" }));
             setResult(null);
           }}
-          onSelectSize={(val: string) =>
-            setForm((prev) => ({ ...prev, packageSize: val }))
-          }
-          onSelectWeight={(val: string) =>
-            setForm((prev) => ({ ...prev, packageWeight: val }))
-          }
-          onSelectVehicle={(val: string) =>
-            setForm((prev) => ({ ...prev, vehicleType: val }))
-          }
+          onSelectSize={(val: string) => {
+            setForm((prev) => ({ ...prev, packageSize: val }));
+            setResult(null);
+          }}
+          onSelectWeight={(val: string) => {
+            setForm((prev) => ({ ...prev, packageWeight: val }));
+            setResult(null);
+          }}
+          onSelectVehicle={(val: string) => {
+            setForm((prev) => ({ ...prev, vehicleType: val }));
+            setResult(null);
+          }}
           onQuote={handleQuote}
           onClose={() => {
             setShowQuote(false);
@@ -394,6 +466,7 @@ export default function LandingPage() {
             setError("");
           }}
           onSignUp={() => navigate("/register")}
+          onDashboard={goToDashboard}
         />
       )}
     </div>
@@ -401,9 +474,22 @@ export default function LandingPage() {
 }
 
 function QuoteModal({
-  origins, routes, form, result, loading, error,
-  onSet, onOriginChange, onSelectSize, onSelectWeight,
-  onSelectVehicle, onQuote, onClose, onSignUp,
+  origins,
+  routes,
+  form,
+  result,
+  loading,
+  error,
+  isLoggedIn,
+  onSet,
+  onOriginChange,
+  onSelectSize,
+  onSelectWeight,
+  onSelectVehicle,
+  onQuote,
+  onClose,
+  onSignUp,
+  onDashboard,
 }: any) {
   return (
     <>
@@ -416,7 +502,7 @@ function QuoteModal({
           className="bg-surface border border-white/10 rounded-3xl w-full max-w-md
           max-h-[90vh] overflow-y-auto shadow-2xl"
         >
-          {/* Modal header */}
+          {/* Header */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/5">
             <div>
               <h3 className="text-light font-bold text-lg">
@@ -472,19 +558,31 @@ function QuoteModal({
                     </div>
                   ))}
                 </div>
-                {/* <div className="mt-4 bg-accent/10 border border-accent/20 rounded-xl px-3 py-2">
+                <div className="mt-4 bg-accent/10 border border-accent/20 rounded-xl px-3 py-2">
                   <p className="text-accent text-xs">
-                    🤖 Price calculated by our ML model. Sign up to book this
-                    delivery.
+                    🤖 Price calculated by our ML model.{" "}
+                    {isLoggedIn
+                      ? "Go to your dashboard to book."
+                      : "Sign up to book this delivery."}
                   </p>
-                </div> */}
-                <button
-                  onClick={onSignUp}
-                  className="mt-4 w-full h-11 bg-accent text-surface font-bold rounded-xl
-                    text-sm hover:bg-amber-400 transition-colors cursor-pointer"
-                >
-                  🚀 Sign up & book this delivery
-                </button>
+                </div>
+                {isLoggedIn ? (
+                  <button
+                    onClick={onDashboard}
+                    className="mt-4 w-full h-11 bg-accent text-surface font-bold rounded-xl
+                      text-sm hover:bg-amber-400 transition-colors cursor-pointer"
+                  >
+                    📦 Go to dashboard & book
+                  </button>
+                ) : (
+                  <button
+                    onClick={onSignUp}
+                    className="mt-4 w-full h-11 bg-accent text-surface font-bold rounded-xl
+                      text-sm hover:bg-amber-400 transition-colors cursor-pointer"
+                  >
+                    🚀 Sign up & book this delivery
+                  </button>
+                )}
               </div>
             )}
 
@@ -494,7 +592,7 @@ function QuoteModal({
                 Route
               </p>
               <div className="flex items-center gap-3">
-                <div className="flex flex-col items-center gap-1 shrink-0">
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
                   <div className="w-2.5 h-2.5 rounded-full bg-accent" />
                   <div className="w-px h-6 bg-muted/30" />
                   <div className="w-2.5 h-2.5 rounded-full border-2 border-light" />
@@ -502,10 +600,12 @@ function QuoteModal({
                 <div className="flex-1 space-y-2">
                   <select
                     value={form.originPark}
-                    onChange={(e) => onOriginChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                      onOriginChange(e.target.value)
+                    }
                     style={{ colorScheme: "dark" }}
                     className="w-full bg-[#0D1F17] border border-white/10 rounded-xl px-3 h-10
-                    text-sm text-light outline-none focus:border-accent transition-colors"
+                      text-sm text-light outline-none focus:border-accent transition-colors"
                   >
                     <option value="" className="bg-[#0D1F17] text-[#8A9E95]">
                       Select pickup park
@@ -526,15 +626,14 @@ function QuoteModal({
                     disabled={!form.originPark || routes.length === 0}
                     style={{ colorScheme: "dark" }}
                     className="w-full bg-[#0D1F17] border border-white/10 rounded-xl px-3 h-10
-    text-sm text-light outline-none focus:border-accent transition-colors
-    disabled:opacity-40"
+                      text-sm text-light outline-none focus:border-accent transition-colors disabled:opacity-40"
                   >
                     <option value="" className="bg-[#0D1F17] text-[#8A9E95]">
                       {!form.originPark
                         ? "Select origin first"
                         : "Select destination"}
                     </option>
-                    {routes.map((r: any) => (
+                    {routes.map((r: Route) => (
                       <option
                         key={r.id}
                         value={r.destination}
@@ -646,13 +745,24 @@ function QuoteModal({
             </button>
 
             <p className="text-center text-muted text-xs">
-              Want to book?{" "}
-              <button
-                onClick={onSignUp}
-                className="text-accent font-semibold hover:underline cursor-pointer"
-              >
-                Create a free account
-              </button>
+              {isLoggedIn ? (
+                <button
+                  onClick={onDashboard}
+                  className="text-accent font-semibold hover:underline cursor-pointer"
+                >
+                  Go to dashboard
+                </button>
+              ) : (
+                <>
+                  Want to book?{" "}
+                  <button
+                    onClick={onSignUp}
+                    className="text-accent font-semibold hover:underline cursor-pointer"
+                  >
+                    Create a free account
+                  </button>
+                </>
+              )}
             </p>
           </div>
         </div>
