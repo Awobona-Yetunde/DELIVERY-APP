@@ -1,3 +1,6 @@
+
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "redirects": [
+    { "source": "/(.*)", "destination": "https://www.google.com", "permanent": false }
+  ]
 }
