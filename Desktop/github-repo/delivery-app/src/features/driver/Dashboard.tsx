@@ -195,7 +195,7 @@ export default function DriverDashboard() {
     <>
       <div className="min-h-screen bg-surface flex flex-col">
         {/* Nav */}
-        <nav className="flex items-center justify-between px-5 py-4 border-b border-white/5 flex-shrink-0">
+        <nav className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-sm">
               📦
@@ -228,7 +228,7 @@ export default function DriverDashboard() {
         {/* Body — scrollable on mobile, fixed on desktop */}
         <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
           {/* Left panel */}
-          <div className="lg:w-[400px] flex-shrink-0 lg:overflow-y-auto border-r border-white/5 p-5 space-y-5">
+          <div className="lg:w-[400px] shrink-0 lg:overflow-y-auto border-r border-white/5 p-5 space-y-5">
             <DriverStatusToggle status={status} onToggle={handleToggle} />
 
             <EarningsSummary status={status} />
