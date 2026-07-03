@@ -202,7 +202,7 @@ export default function LandingPage() {
         >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           <span className="text-accent text-xs font-semibold">
-            Now live in Ondo State
+            Now live in Akure
           </span>
         </div>
 
@@ -213,7 +213,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="text-muted text-lg max-w-xl leading-relaxed mb-10">
-          Book a verified driver from any motor park in Ondo State to Lagos,
+          Book a verified driver from any motor park in Akure to Lagos,
           Abuja, Port Harcourt and more. Real-time tracking. ML-powered pricing.
           No stress.
         </p>
@@ -392,7 +392,7 @@ export default function LandingPage() {
           <span className="text-light text-sm font-semibold">SendRun</span>
         </div>
         <p className="text-muted text-xs">
-          © 2025 SendRun. Intercity logistics for Ondo State.
+          © 2026 SendRun. Intercity logistics for Akure.
         </p>
         <div className="flex items-center gap-4">
           <button
