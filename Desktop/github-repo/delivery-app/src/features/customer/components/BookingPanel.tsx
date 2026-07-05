@@ -9,10 +9,10 @@ const PACKAGE_SIZES = [
 ];
 
 const PACKAGE_WEIGHTS = [
-  { value: "very_light", label: "Very Light", sub: "Under 1kg" },
-  { value: "light", label: "Light", sub: "1 – 5kg" },
-  { value: "medium", label: "Medium", sub: "5 – 20kg" },
-  { value: "heavy", label: "Heavy", sub: "20kg and above" },
+  { value: "very_light", label: "Very Light", sub: "Feels like a phone or a book" },
+  { value: "light", label: "Light", sub: "Feels like a laptop bag" },
+  { value: "medium", label: "Medium", sub: "Feels like a bag of rice you carry with one hand" },
+  { value: "heavy", label: "Heavy", sub: "Needs both hands, it is a struggle" },
 ];
 
 const VEHICLE_TYPES = [
