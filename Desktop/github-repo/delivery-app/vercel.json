@@ -1,9 +1,9 @@
 {
-  "redirects": [
+  "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "https://www.google.com",
-      "permanent": false
-    }
+      "source": "/api/:path*",
+      "destination": "http://147.182.208.195:8000/:path*"
+    },
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
